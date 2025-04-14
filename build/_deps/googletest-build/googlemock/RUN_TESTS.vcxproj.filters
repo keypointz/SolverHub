@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\TEAM\EMPCommon\SolverHub\src_t\build\CMakeFiles\c642b370e8cf211f51e2e44ae2d13749\RUN_TESTS_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4CABF5D1-AD44-323A-A122-EA472717C60D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

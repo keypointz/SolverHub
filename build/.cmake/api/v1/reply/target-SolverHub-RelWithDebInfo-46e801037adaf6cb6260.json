@@ -1,0 +1,304 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "bin/RelWithDebInfo/SolverHub.dll"
+		},
+		{
+			"path" : "lib/RelWithDebInfo/SolverHub.lib"
+		},
+		{
+			"path" : "bin/RelWithDebInfo/SolverHub.pdb"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"add_compile_definitions",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 87,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 99,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 15,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 68,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG"
+				},
+				{
+					"fragment" : "-std:c++17"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 3,
+					"define" : "SOLVERHUB_EXPORTS"
+				},
+				{
+					"define" : "SolverHub_EXPORTS"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "UNICODE"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "_DEBUG"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "_UNICODE"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCommon/SolverHub/src_t"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCommon/SolverHub/src_t/code"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCOMMON"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCOMMON/Exception"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCOMMON/eigen-3.3.7"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/BuildTry2/FreeCADLibs_12.1.2_x64_VC15/include"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCommon/MeshHub/include"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "D:/TEAM/EMPCommon/GeoHub/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "SolverHub::@6890427a1f51a3e7e1df",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/machine:X86 /debug /INCREMENTAL",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "$<0:D:/TEAM/BuildTry2/FreeCADLibs_12.1.2_x64_VC15/lib/boost_filesystem-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_program_options-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_regex-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_system-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_thread-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_chrono-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_date_time-vc141-mt-gd-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "\"D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_atomic-vc141-mt-gd-x64-1_67.lib>\"",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "$<0:D:/TEAM/BuildTry2/FreeCADLibs_12.1.2_x64_VC15/lib/boost_filesystem-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_program_options-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_regex-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_system-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_thread-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_chrono-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_date_time-vc141-mt-x64-1_67.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "\"D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\lib\\boost_atomic-vc141-mt-x64-1_67.lib>\"",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "SolverHub",
+	"nameOnDisk" : "SolverHub.dll",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "code/CouplingPart.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "code/SharedMemoryManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "code/SharedMemoryStruct.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "code/SolverHub.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "code/SolverHubDef.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "SHARED_LIBRARY"
+}

@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  CMAKE_VERSION: 3.24.0
+  NINJA_VERSION: 1.11.1
+  BUILD_TYPE: Release
+  CCACHE_VERSION: 4.7.3
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: "Windows Latest MSVC",
+            os: windows-latest,
+            cc: "cl", cxx: "cl",
+            environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
+          # Uncomment to add more platforms if needed
+          # - {
+          #   name: "Ubuntu Latest GCC",
+          #   os: ubuntu-latest,
+          #   cc: "gcc", cxx: "g++"
+          # }
+          # - {
+          #   name: "macOS Latest Clang",
+          #   os: macos-latest,
+          #   cc: "clang", cxx: "clang++"
+          # }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: ${{ env.NINJA_VERSION }}
+
+      - name: Install ccache
+        id: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.config.name }}
+          max-size: 500M
+
+      - name: Setup Visual Studio Developer Command Prompt
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install Boost (Windows)
+        if: runner.os == 'Windows'
+        uses: MarkusJx/install-boost@v2.4.4
+        id: install-boost
+        with:
+          boost_version: 1.78.0
+          platform_version: 2022
+          toolset: msvc
+          arch: x86_64
+
+      - name: Install Eigen (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $url = "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip"
+          $output = "eigen.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath .
+          Move-Item -Path eigen-3.4.0 -Destination eigen
+
+      # Uncomment and adapt if you need to install dependencies on Linux
+      # - name: Install Dependencies (Ubuntu)
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y libboost-all-dev libeigen3-dev
+
+      # Uncomment and adapt if you need to install dependencies on macOS
+      # - name: Install Dependencies (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     brew install boost eigen
+
+      - name: Configure CMake
+        run: |
+          cmake -B ${{ github.workspace }}/build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+          EIGEN3_INCLUDE_DIR: ${{ github.workspace }}/eigen
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+
+      - name: Build
+        run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        run: ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts-${{ matrix.config.name }}
+          path: |
+            ${{ github.workspace }}/build/bin
+            ${{ github.workspace }}/build/lib
+          retention-days: 7

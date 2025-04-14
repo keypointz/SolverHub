@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:\\TEAM\\EMPCOMMON",
+                "D:\\TEAM\\EMPCOMMON\\Exception",
+                "D:\\TEAM\\EMPCOMMON\\eigen-3.3.7",
+                "D:\\TEAM\\BuildTry2\\FreeCADLibs_12.1.2_x64_VC15\\include",
+                "D:\\TEAM\\EMPCommon\\MeshHub\\include",
+                "D:\\TEAM\\EMPCommon\\GeoHub\\include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.22621.0",
+            "compilerPath": "cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

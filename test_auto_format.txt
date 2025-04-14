@@ -1,0 +1,30 @@
+# Default format version
+VERSION {V2.0}
+
+# name: {name}
+NAME {test_auto_format}
+
+# meshName: {meshName}
+MESHNAME {mesh1} 
+
+# Field/Global Data
+DTYPE {Field}
+
+# DataGeoType: {NodalData/EdgeData/FacetData/BlockData}
+VTYPE {NODAL}
+
+# simulation time value
+t {0}
+
+# sysTimeStamp: 
+CLOCK {2023-05-01 12:00:00}
+
+# data vector size
+NrDOF {5}
+
+# No explicit format declaration here, just data with index
+1 1.2
+3 12.0
+5 5.2
+4 1.1
+7 1.0

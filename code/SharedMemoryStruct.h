@@ -76,29 +76,29 @@ namespace EMP {
 
 		// 默认构造函数
 		LocalDataBase();
-		
+
 		// 带参数的构造函数
 		LocalDataBase(const std::string& name_, DataType dataType_ = DataType::UNKNOWN_DATA);
-		
+
 		// 虚析构函数
 		virtual ~LocalDataBase() = default;
-		
+
 		// 获取数据名称
 		std::string getName() const;
-		
+
 		// 获取版本号
 		uint64_t getVersion() const;
-		
+
 		// 获取时间戳
 		time_t getTimeStamp() const;
-		
+
 		// 获取数据类型
 		virtual DataType getDataType() const;
-		
+
 		// 设置数据类型
 		void setDataType(DataType type);
 	};
-	
+
 	// 共享数据基类，为所有共享数据结构提供统一接口
 	class SOLVERHUB_API SharedDataBase {
 	public:
@@ -109,22 +109,22 @@ namespace EMP {
 		SharedMemoryString name;          // 数据名称
 		bip::interprocess_mutex mutex;    // 用于保护共享数据的互斥锁
 		DataType dataType;                // 数据类型标识
-		
+
 		// 构造函数
 		SharedDataBase(bip::managed_shared_memory::segment_manager* segment_manager, DataType dataType_ = DataType::UNKNOWN_DATA);
-		
+
 		// 拷贝构造函数
 		SharedDataBase(const SharedDataBase& other);
-		
+
 		// 赋值运算符
 		SharedDataBase& operator=(const SharedDataBase& other);
-		
+
 		// 虚析构函数
 		virtual ~SharedDataBase() = default;
-		
+
 		// 获取数据类型
 		DataType getDataType() const;
-		
+
 		// 设置数据类型
 		void setDataType(DataType type);
 	};
@@ -143,26 +143,26 @@ namespace EMP {
 	{
 		std::string description;
 		std::vector<Definition> definitions;
-		
+
 		// 默认构造函数
 		LocalDefinitionList();
-		
+
 		// 带参数的构造函数
 		LocalDefinitionList(const std::string& name_, const std::string& description_);
-		
+
 		// 添加定义
 		void addDefinition(const Definition& def);
-		
+
 		// 根据ID查找定义
 		Definition* findDefinitionById(int id);
-		
+
 		// 获取定义数量
 		size_t getDefinitionCount() const;
-		
+
 		// 实现LocalDataBase接口
 		DataType getDataType() const override;
 	};
-	
+
 	struct SOLVERHUB_API Node {
 		int id;
 		int ref;
@@ -199,7 +199,7 @@ namespace EMP {
 		int myNbEdges;
 		int myNbTriangles;
 		int myNbTetras;
-		
+
 		//初始化函数
 		MeshInfo();
 
@@ -221,22 +221,22 @@ namespace EMP {
 
 		// 带参数的构造函数 - 单个几何体
 		LocalGeometry(const std::string& name_, const std::string& shapeBrp_);
-		
+
 		// 添加几何体
 		void addGeometry(const std::string& name_, const std::string& shapeBrp_);
-		
+
 		// 根据名称获取几何文件
 		std::string getShapeBrpByName(const std::string& name_) const;
-		
+
 		// 获取几何体数量
 		size_t getGeometryCount() const;
-		
+
 		// 获取主要几何体名称（第一个）
 		std::string getPrimaryName() const;
-		
+
 		// 获取主要几何体文件（第一个）
 		std::string getPrimaryShapeBrp() const;
-		
+
 		// 实现LocalDataBase接口
 		DataType getDataType() const override;
 	};
@@ -266,11 +266,12 @@ namespace EMP {
 		std::string meshName;            // 网格名
 		bool isFieldData;                // 是否是场数据
 		DataGeoType type;                // 数据类型
-		bool isSequentiallyMatchedWithMesh; // 数据是否与网格顺序匹配
 		double t;                        // 数据对应的耦合计算时刻
 		std::vector<std::pair<int, int>> dimtags; // 数据对应的几何位置 (dimension, tag)
-		std::vector<int> index;          // 数据索引
-		std::vector<double> data;        // 数据值
+		std::vector<int> index;          // 数据索引，即每行数据对应的 point/edge/facet/block id，所有数据都必须包含索引列
+		std::vector<std::string> titles;    // 各数据分量的标题，亦可为表达式，例如，ux, uy, uz
+		std::vector<std::string> units;    // 各数据分量的单位，例如，m/s, m/s, m/s
+		std::vector<std::vector<double>> data; // 多分量数据
 
 		// 默认构造函数
 		LocalData();
@@ -280,10 +281,16 @@ namespace EMP {
 
 		// 实现LocalDataBase接口
 		DataType getDataType() const override;
-		
+
 		// 文件读写功能
 		bool saveToFile(const std::string& filePath) const;
 		bool loadFromFile(const std::string& filePath);
+
+		// 分量管理
+		void addComponent(const std::string& componentName, const std::vector<double>& componentData, const std::string& unit = "");
+		std::vector<double> getComponent(const std::string& componentName) const;
+		size_t getComponentCount() const;
+		size_t getComponentIndex(const std::string& componentName) const;
 	};
 
 	// 共享的几何文件类
@@ -293,22 +300,22 @@ namespace EMP {
 		SharedMemoryVectorString shapeBrps;      // 共享的几何文件
 
 		SharedGeometry(bip::managed_shared_memory::segment_manager* segment_manager);
-		
+
         // 拷贝构造函数
 		SharedGeometry(const SharedGeometry& other);
-		
+
 		// operator=()
 		SharedGeometry& operator=(const SharedGeometry& other);
-		
+
 		// 从LocalGeometry复制数据到共享对象
 		void copyFromLocal(const LocalGeometry& local, SharedMemoryAllocator<char> allocator);
-		
+
 		// 复制数据到LocalGeometry
 		void copyToLocal(LocalGeometry& local) const;
-		
+
 		// 获取所有几何模型的名称列表
 		void getShapeNames(std::vector<std::string>& nameList) const;
-		
+
 		// 根据名称获取对应的几何文件
 		std::string getShapeBrpByName(const std::string& name) const;
 	};
@@ -324,16 +331,16 @@ namespace EMP {
 		SharedMemoryVector<int> definitionParameterCounts; // 每个定义的参数数量
 
 		SharedDefinitionList(bip::managed_shared_memory::segment_manager* segment_manager);
-		
+
 		// 拷贝构造函数
 		SharedDefinitionList(const SharedDefinitionList& other);
-		
+
 		// operator=()
 		SharedDefinitionList& operator=(const SharedDefinitionList& other);
-		
+
 		// 从LocalDefinitionList复制数据到共享对象
 		void copyFromLocal(const LocalDefinitionList& local, SharedMemoryAllocator<char> allocator);
-		
+
 		// 复制数据到LocalDefinitionList
 		void copyToLocal(LocalDefinitionList& local) const;
 	};
@@ -357,7 +364,7 @@ namespace EMP {
 
 		// 从LocalMesh复制数据到共享对象
 		void copyFromLocal(const LocalMesh& local, SharedMemoryAllocator<char> allocator);
-		
+
 		// 复制数据到LocalMesh
 		void copyToLocal(LocalMesh& local) const;
 	};
@@ -368,11 +375,12 @@ namespace EMP {
 		bool isFieldData;			    // 是否是场数据
 		double t;                       // 数据对应的耦合计算时刻
 		DataGeoType type;			    // 数据类型
-		bool isSequentiallyMatchedWithMesh; // 数据是否与网格顺序匹配
 		SharedMemoryString meshName;         // 网格名
 		SharedMemoryVectorPair dimtags;	     // 数据对应的几何位置 (dimension, tag)
-		SharedMemoryVector<int> index;	     // 数据索引, 指定数据对应的网格结点、边、面或体 element 的 id
-		SharedMemoryVector<double> data;	 // 数据值
+		SharedMemoryVector<int> index;	     // 数据索引, 指定数据对应的网格结点、边、面或体 element 的 id，所有数据都必须包含索引列
+		SharedMemoryVectorString titles;      // 各数据分量的标题，例如，ux, uy, uz
+		SharedMemoryVectorString units;       // 各数据分量的单位，例如，m/s, m/s, m/s
+		SharedMemoryVector<SharedMemoryVector<double>> data; // 多分量数据
 
 		SharedData(bip::managed_shared_memory::segment_manager* segment_manager);
 
@@ -384,7 +392,7 @@ namespace EMP {
 
 		// 从LocalData复制数据到共享对象
 		void copyFromLocal(const LocalData& local, SharedMemoryAllocator<char> allocator);
-		
+
 		// 复制数据到LocalData
 		void copyToLocal(LocalData& local) const;
 	};
@@ -397,10 +405,10 @@ namespace EMP {
 		SharedMemoryString exceptionMessage;
 
 		SharedException(bip::managed_shared_memory::segment_manager* segment_manager);
-		
+
 		// Copy constructor
 		SharedException(const SharedException& other);
-		
+
 		// operator=()
 		SharedException& operator=(const SharedException& other);
 	};
@@ -424,16 +432,16 @@ namespace EMP {
 		// 添加内存段信息
 		size_t geometrySegmentTotalSize;    // 几何共享内存段总大小
 		size_t geometrySegmentFreeSize;     // 几何共享内存段可用空间大小
-		
+
 		size_t meshSegmentTotalSize;        // 网格共享内存段总大小
 		size_t meshSegmentFreeSize;         // 网格共享内存段可用空间大小
-		
+
 		size_t dataSegmentTotalSize;        // 计算数据共享内存段总大小
 		size_t dataSegmentFreeSize;         // 计算数据共享内存段可用空间大小
-		
+
 		size_t controlSegmentTotalSize;     // 控制数据共享内存段总大小
 		size_t controlSegmentFreeSize;      // 控制数据共享内存段可用空间大小
-		
+
 		size_t definitionSegmentTotalSize;  // 模型参数共享内存段总大小
 		size_t definitionSegmentFreeSize;   // 模型参数共享内存段可用空间大小
 
@@ -442,7 +450,7 @@ namespace EMP {
 
 		// 带参数的构造函数
 		LocalControlData(const std::string& name_, const std::string& jsonConfig_);
-			
+
 		// 实现LocalDataBase接口
 		DataType getDataType() const override;
 	};
@@ -454,7 +462,7 @@ namespace EMP {
 		double dt;                      // 时间步长
 		double t;                       // 当前时刻
 		bool isConverged;               // 是否收敛
-		
+
 		SharedException exception;	    // 异常信息
 
 		SharedMemoryVectorString sharedModelNames;  // 几何共享数据名
@@ -465,23 +473,23 @@ namespace EMP {
 
 		SharedMemoryVectorString sharedDataNames;   // 数据共享数据名
 		SharedMemoryVector<int> sharedDataMemorySizes; // 数据共享数据所需内存大小
-		
+
 		SharedMemoryVectorString sharedDefinitionNames;   // 模型参数共享数据名
 		SharedMemoryVector<int> sharedDefinitionMemorySizes; // 模型参数共享数据所需内存大小
 
 		// 添加共享内存段大小和可用空间信息
 		size_t geometrySegmentTotalSize;    // 几何共享内存段总大小
 		size_t geometrySegmentFreeSize;     // 几何共享内存段可用空间大小
-		
+
 		size_t meshSegmentTotalSize;        // 网格共享内存段总大小
 		size_t meshSegmentFreeSize;         // 网格共享内存段可用空间大小
-		
+
 		size_t dataSegmentTotalSize;        // 计算数据共享内存段总大小
 		size_t dataSegmentFreeSize;         // 计算数据共享内存段可用空间大小
-		
+
 		size_t controlSegmentTotalSize;     // 控制数据共享内存段总大小
 		size_t controlSegmentFreeSize;      // 控制数据共享内存段可用空间大小
-		
+
 		size_t definitionSegmentTotalSize;  // 模型参数共享内存段总大小
 		size_t definitionSegmentFreeSize;   // 模型参数共享内存段可用空间大小
 
@@ -495,7 +503,7 @@ namespace EMP {
 
 		// 从LocalControlData复制数据到共享对象
 		void copyFromLocal(const LocalControlData& local, SharedMemoryAllocator<char> allocator);
-		
+
 		// 复制数据到LocalControlData
 		void copyToLocal(LocalControlData& local) const;
 	};

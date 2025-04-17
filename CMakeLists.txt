@@ -26,7 +26,7 @@ set(MeshHub "D:/TEAM/EMPCommon/MeshHub")
 set(MeshSolver "D:/TEAM/EMPCommon/MeshSolver")
 
 # Find Boost package
-find_package(Boost COMPONENTS system filesystem thread program_options regex chrono date_time atomic)
+# find_package(Boost COMPONENTS system filesystem thread program_options regex chrono date_time atomic)
 
 # If Boost is not found, we'll just use the include directories and manually specify libraries
 if(NOT Boost_FOUND)
@@ -44,6 +44,7 @@ if(NOT Boost_FOUND)
         "${BOOST_LIBRARYDIR}/boost_chrono-vc141-mt-gd-x64-1_67.lib"
         "${BOOST_LIBRARYDIR}/boost_date_time-vc141-mt-gd-x64-1_67.lib"
         "${BOOST_LIBRARYDIR}/boost_atomic-vc141-mt-gd-x64-1_67.lib"
+        "${BOOST_LIBRARYDIR}/libboost_date_time-vc141-mt-gd-x64-1_67.lib"
     )
 
     set(Boost_LIBRARIES_RELEASE
@@ -109,5 +110,5 @@ target_link_libraries(SolverHub
 # Enable testing
 enable_testing()
 
-# Add tests directory
-add_subdirectory(tests)
+# Add test directory
+add_subdirectory(test)

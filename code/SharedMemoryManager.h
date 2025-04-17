@@ -43,7 +43,7 @@ namespace EMP {
             : yExceptionBase(type_, code_, msg_) {}
 
         void message() override {
-            std::cerr << "SharedMemory Exception - Type: " << type << ", Code: " << code 
+            std::cerr << "SharedMemory Exception - Type: " << type << ", Code: " << code
                 << ", Message: " << msg << std::endl;
         }
     };
@@ -56,7 +56,7 @@ namespace EMP {
         SharedMemoryManager(const std::string& memoryName, bool isCreator = false,
             const std::string& prefix = "", size_t control_memory_size = 1024 * 1024,
             const std::string& logFilePath = "");
-        
+
         ~SharedMemoryManager();
 
         // 获取控制数据的指针
@@ -187,22 +187,22 @@ namespace EMP {
 
         // 更新所有内存段大小信息到控制数据
         void updateMemorySegmentInfo();
-        
+
         // 从控制数据中获取几何模型名称列表
         void getControlDataModelNames(std::vector<std::string>& modelNames);
-        
+
         // 从控制数据中获取网格名称列表
         void getControlDataMeshNames(std::vector<std::string>& meshNames);
-        
+
         // 获取数据类型信息
-        void getDataTypeInfo(SharedData* data, bool& isFieldData, DataGeoType& type, bool& isSequentiallyMatchedWithMesh);
-        
+        void getDataTypeInfo(SharedData* data, bool& isFieldData, DataGeoType& type);
+
         // 获取数据关联的网格名称
         void getDataMeshName(SharedData* data, std::string& meshName);
-        
+
         // 更新控制数据中的时间步长
         void updateControlDataDt(double dt);
-        
+
         // 更新控制数据中的当前时间
         void updateControlDataTime(double t);
 
@@ -328,9 +328,9 @@ namespace EMP {
         std::vector<SharedDefinitionList*> defs_;
 
         // 内部辅助函数：将对象写入已打开的文件流
-        bool saveObjectToFile(std::ofstream& file, std::shared_ptr<bip::managed_shared_memory> segment, 
+        bool saveObjectToFile(std::ofstream& file, std::shared_ptr<bip::managed_shared_memory> segment,
                              const std::string& objectName, bool binaryFormat);
-                             
+
         // 内部辅助函数：从已打开的文件流读取对象
         bool loadObjectFromFile(std::ifstream& file, std::shared_ptr<bip::managed_shared_memory> segment,
                                bool binaryFormat);

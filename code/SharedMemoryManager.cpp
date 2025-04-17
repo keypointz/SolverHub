@@ -392,15 +392,31 @@ size_t SharedMemoryManager::estimateDataMemorySize(const LocalData& localData) {
 
 	// 数据值大小
 	size_t indexSize = localData.index.size() * sizeof(int);
-	size_t dataSize = localData.data.size() * sizeof(double);
+
+	// 计算分量标题和单位的大小
+	size_t titlesSize = 0;
+	size_t unitsSize = 0;
+	for (const auto& title : localData.titles) {
+		titlesSize += title.size() + 1; // +1 for null terminator
+	}
+	for (const auto& unit : localData.units) {
+		unitsSize += unit.size() + 1; // +1 for null terminator
+	}
+
+	// 计算多分量数据的大小
+	size_t dataSize = 0;
+	for (const auto& componentData : localData.data) {
+		dataSize += componentData.size() * sizeof(double);
+	}
+
 	size_t dimtagsSize = localData.dimtags.size() * sizeof(SharedMemoryPair);
 
 	// 考虑共享内存管理开销
 	size_t totalSize = baseSize + nameSize + meshNameSize +
-					   indexSize + dataSize + dimtagsSize;
+					   indexSize + dataSize + dimtagsSize + titlesSize + unitsSize;
 
-	// 添加额外的20%作为安全边际
-	return static_cast<size_t>(totalSize * 1.2);
+	// 添加额外的50%作为安全边际，因为多分量数据可能需要更多内存
+	return static_cast<size_t>(totalSize * 1.5);
 }
 
 // 获取各个内存段的使用情况
@@ -3049,7 +3065,7 @@ void SharedMemoryManager::getControlDataMeshNames(std::vector<std::string>& mesh
 }
 
 // 获取数据类型信息
-void SharedMemoryManager::getDataTypeInfo(SharedData* data, bool& isFieldData, DataGeoType& type, bool& isSequentiallyMatchedWithMesh) {
+void SharedMemoryManager::getDataTypeInfo(SharedData* data, bool& isFieldData, DataGeoType& type) {
     if (!data) {
         log(LogLevel::Error, "数据对象是空指针");
         return;
@@ -3062,7 +3078,6 @@ void SharedMemoryManager::getDataTypeInfo(SharedData* data, bool& isFieldData, D
         // 获取数据类型信息
         isFieldData = data->isFieldData;
         type = data->type;
-        isSequentiallyMatchedWithMesh = data->isSequentiallyMatchedWithMesh;
     }
     catch (const std::exception& e) {
         log(LogLevel::Error, "获取数据类型信息失败: " + std::string(e.what()));

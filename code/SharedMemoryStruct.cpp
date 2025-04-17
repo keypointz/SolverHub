@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <ctime>
+#include <iomanip>
 
 namespace EMP {
     //================ LocalDataBase 实现 ================
@@ -216,7 +217,6 @@ namespace EMP {
         : LocalDataBase(),
         isFieldData(true),
         type(VertexData),
-        isSequentiallyMatchedWithMesh(true),
         t(0.0)
     {
         setDataType(DataType::CALCULATION_DATA);
@@ -227,7 +227,6 @@ namespace EMP {
         meshName(meshName_),
         isFieldData(true),
         type(VertexData),
-        isSequentiallyMatchedWithMesh(true),
         t(0.0)
     {
         setDataType(DataType::CALCULATION_DATA);
@@ -237,6 +236,64 @@ namespace EMP {
         return DataType::CALCULATION_DATA;
     }
 
+    void LocalData::addComponent(const std::string& componentName, const std::vector<double>& componentData, const std::string& unit) {
+        // 检查是否已存在该分量
+        for (size_t i = 0; i < titles.size(); ++i) {
+            if (titles[i] == componentName) {
+                // 如果已存在，替换数据
+                if (i < data.size()) {
+                    data[i] = componentData;
+                    if (!unit.empty() && i < units.size()) {
+                        units[i] = unit;
+                    }
+                }
+                return;
+            }
+        }
+
+        // 添加新分量
+        titles.push_back(componentName);
+        data.push_back(componentData);
+        units.push_back(unit);
+
+        // 确保所有分量数据长度一致
+        size_t maxSize = 0;
+        for (const auto& comp : data) {
+            maxSize = max(maxSize, comp.size());
+        }
+
+        // 将所有分量数据长度调整为相同
+        for (auto& comp : data) {
+            if (comp.size() < maxSize) {
+                comp.resize(maxSize, 0.0); // 用 0 填充
+            }
+        }
+
+        // 索引列始终是必需的，确保所有数据都有索引
+    }
+
+    std::vector<double> LocalData::getComponent(const std::string& componentName) const {
+        for (size_t i = 0; i < titles.size(); ++i) {
+            if (titles[i] == componentName && i < data.size()) {
+                return data[i];
+            }
+        }
+        return std::vector<double>(); // 如果找不到，返回空向量
+    }
+
+    size_t LocalData::getComponentCount() const {
+        return titles.size();
+    }
+
+    size_t LocalData::getComponentIndex(const std::string& componentName) const {
+        for (size_t i = 0; i < titles.size(); ++i) {
+            if (titles[i] == componentName) {
+                return i;
+            }
+        }
+        return static_cast<size_t>(-1); // 如果找不到，返回无效索引
+    }
+
     bool LocalData::saveToFile(const std::string& filePath) const {
         try {
             std::ofstream file(filePath);
@@ -244,21 +301,20 @@ namespace EMP {
                 return false;
             }
 
+            // 设置科学计数法和10位有效数字
+            file << std::scientific << std::setprecision(10);
+
             // 写入版本信息
-            file << "# Default format version\n";
             file << "VERSION {V2.0}\n\n";
 
             // 写入名称
-            file << "# name: {name}\n";
             file << "NAME {" << name << "}\n\n";
 
             // 写入网格名
-            file << "# meshName: {meshName}\n";
-            file << "MESHNAME {" << meshName << "} \n\n";
+            file << "MESHNAME {" << meshName << "}\n\n";
 
             // 如果有dimtags，写入dimtags
             if (!dimtags.empty()) {
-                file << "# dimtags (dim, tag)\n";
                 file << "DIMTAG {";
                 for (size_t i = 0; i < dimtags.size(); ++i) {
                     file << "(" << dimtags[i].first << "," << dimtags[i].second << ")";
@@ -267,12 +323,10 @@ namespace EMP {
                 file << "}\n\n";
             }
 
-            // 写入数据类型（场数据或全局数据）
-            file << "# Field/Global Data\n";
+            // 写入数据类型
             file << "DTYPE {" << (isFieldData ? "Field" : "Global") << "}\n\n";
 
             // 写入数据几何类型
-            file << "# DataGeoType: {NodalData/EdgeData/FacetData/BlockData}\n";
             const char* typeStr = "";
             switch (type) {
                 case VertexData: typeStr = "NODAL"; break;
@@ -283,30 +337,71 @@ namespace EMP {
             file << "VTYPE {" << typeStr << "}\n\n";
 
             // 写入时间值
-            file << "# simulation time value\n";
-            file << "t {" << t << "}\n\n";
+            file << "t {" << std::scientific << std::setprecision(10) << t << "}\n\n";
 
             // 写入系统时间戳
-            file << "# sysTimeStamp: \n";
             char timeBuffer[100];
             struct tm* timeinfo = localtime(&sysTimeStamp);
             strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", timeinfo);
             file << "CLOCK {" << timeBuffer << "}\n\n";
 
-            // 写入数据向量大小
-            file << "# data vector size\n";
-            file << "NrDOF {" << data.size() << "}\n\n";
-
-            // 写入数据
-            if (isSequentiallyMatchedWithMesh) {
-                file << "# isSequentiallyMatchedWithMesh == true, only output data\n";
-                for (const auto& val : data) {
-                    file << val << "\n";
+            // 写入分量名称
+            if (!titles.empty()) {
+                file << "COMPONENTS {";
+                for (size_t i = 0; i < titles.size(); ++i) {
+                    file << titles[i];
+                    if (i < titles.size() - 1) file << ",";
                 }
-            } else {
-                file << "# isSequentiallyMatchedWithMesh == false, output data with index\n";
-                for (size_t i = 0; i < data.size(); ++i) {
-                    file << index[i] << " " << data[i] << "\n";
+                file << "}\n\n";
+
+                // 写入分量单位
+                if (!units.empty()) {
+                    file << "UNITS {";
+                    for (size_t i = 0; i < units.size() && i < titles.size(); ++i) {
+                        file << units[i];
+                        if (i < units.size() - 1 && i < titles.size() - 1) file << ",";
+                    }
+                    file << "}\n\n";
+                }
+            }
+
+            // 写入数据点数量
+            size_t numPoints = 0;
+            if (!data.empty() && !data[0].empty()) {
+                numPoints = data[0].size();
+            } else if (!index.empty()) {
+                numPoints = index.size();
+            }
+            // 输出数据行数
+            file << "NrROW {" << numPoints << "}\n\n";
+
+            // 如果没有数据，直接返回
+            if (data.empty() || titles.empty()) {
+                file.close();
+                return true;
+            }
+
+            // 确保所有分量数据长度一致
+            size_t dataSize = data[0].size();
+
+            // 写入数据 - 始终包含索引列
+            for (size_t i = 0; i < dataSize; ++i) {
+                if (i < index.size()) {
+                    file << index[i] << " ";
+
+                    // 写入所有分量的值
+                    for (size_t j = 0; j < data.size(); ++j) {
+                        if (i < data[j].size()) {
+                            file << data[j][i];
+                        } else {
+                            file << "0.0000000000e+00"; // 如果数据不存在，写入 0（科学计数法，10位有效数字）
+                        }
+
+                        if (j < data.size() - 1) {
+                            file << " ";
+                        }
+                    }
+                    file << "\n";
                 }
             }
 
@@ -327,18 +422,36 @@ namespace EMP {
 
             std::string line, key, value;
 
+            // 跟踪已读取的键
+            std::map<std::string, bool> key_found;
+
             // 清空现有数据
             dimtags.clear();
             index.clear();
             data.clear();
+            titles.clear();
+            units.clear();
 
-            // 标记是否已经设置了isSequentiallyMatchedWithMesh
-            bool formatExplicitlySet = false;
+            // 索引列始终是必需的
 
-            // 解析文件头部信息
+            // 记录数据部分的起始行
+            std::vector<std::string> dataLines;
+
+            // 解析文件头部信息（元数据部分）
+            bool inDataSection = false;
             while (std::getline(file, line)) {
+                // 如果已经进入数据部分，收集数据行
+                if (inDataSection) {
+                    if (!line.empty() && line[0] != '#') {
+                        dataLines.push_back(line);
+                    }
+                    continue;
+                }
+
                 // 跳过注释行和空行
-                if (line.empty() || line[0] == '#') continue;
+                if (line.empty() || line[0] == '#') {
+                    continue;
+                }
 
                 // 解析键值对
                 size_t startPos = line.find('{');
@@ -353,17 +466,22 @@ namespace EMP {
 
                     if (key == "NAME") {
                         name = value;
+                        key_found["NAME"] = true;
                     } else if (key == "MESHNAME") {
                         meshName = value;
+                        key_found["MESHNAME"] = true;
                     } else if (key == "DTYPE") {
                         isFieldData = (value == "Field");
+                        key_found["DTYPE"] = true;
                     } else if (key == "VTYPE") {
                         if (value == "NODAL") type = VertexData;
                         else if (value == "EDGE") type = EdgeData;
                         else if (value == "FACET") type = FacetData;
                         else if (value == "BLOCK") type = BlockData;
+                        key_found["VTYPE"] = true;
                     } else if (key == "t") {
                         t = std::stod(value);
+                        key_found["t"] = true;
                     } else if (key == "CLOCK") {
                         // 时间戳处理，这里采用Windows兼容的方式
                         struct tm tm = {};
@@ -378,6 +496,7 @@ namespace EMP {
                             tm.tm_sec = sec;
                             sysTimeStamp = mktime(&tm);
                         }
+                        key_found["CLOCK"] = true;
                     } else if (key == "DIMTAG") {
                         // 解析 dimtags, 格式如 "(3,2),(3,3),(3,4)"
                         std::string dimtagStr = value;
@@ -395,92 +514,210 @@ namespace EMP {
                             }
                             pos = endPos + 1;
                         }
-                    } else if (key == "NrDOF") {
+                        key_found["DIMTAG"] = true;
+                    } else if (key == "COMPONENTS") {
+                        // 解析分量名称，格式如 "ux,uy,uz"
+                        std::string componentsStr = value;
+                        size_t pos = 0;
+                        std::string token;
+                        while ((pos = componentsStr.find(',')) != std::string::npos) {
+                            token = componentsStr.substr(0, pos);
+                            titles.push_back(token);
+                            units.push_back(""); // 默认单位为空
+                            componentsStr.erase(0, pos + 1);
+                        }
+                        // 添加最后一个分量
+                        if (!componentsStr.empty()) {
+                            titles.push_back(componentsStr);
+                            units.push_back("");
+                        }
+
+                        // 为每个分量创建数据向量
+                        data.resize(titles.size());
+                        key_found["COMPONENTS"] = true;
+                    } else if (key == "UNITS") {
+                        // 解析分量单位，格式如 "m,m,m"
+                        std::string unitsStr = value;
+                        size_t pos = 0;
+                        std::string token;
+                        size_t unitIndex = 0;
+
+                        // 清空单位列表，准备重新填充
+                        units.clear();
+
+                        while ((pos = unitsStr.find(',')) != std::string::npos) {
+                            token = unitsStr.substr(0, pos);
+                            units.push_back(token);
+                            unitsStr.erase(0, pos + 1);
+                            unitIndex++;
+                        }
+                        // 添加最后一个单位
+                        if (!unitsStr.empty()) {
+                            units.push_back(unitsStr);
+                        }
+
+                        // 确保单位数量与分量数量一致
+                        if (units.size() < titles.size()) {
+                            for (size_t i = units.size(); i < titles.size(); i++) {
+                                units.push_back("1");
+                            }
+                        }
+                        key_found["UNITS"] = true;
+                    } else if (key == "NrROW") {
                         int size = std::stoi(value);
-                        data.reserve(size);
+                        // 为每个分量预分配空间
+                        for (auto& comp : data) {
+                            comp.reserve(size);
+                        }
                         index.reserve(size);
+                        dataLines.reserve(size);
+                        // 标记已进入数据部分
+                        inDataSection = true;
+                        key_found["NrROW"] = true;
                     } else if (key == "VERSION") {
                         // 版本检查
                         if (value != "V2.0") {
                             std::cerr << "Warning: Unsupported file version: " << value << std::endl;
                         }
-                    }
-                } else if (line.find("isSequentiallyMatchedWithMesh == true") != std::string::npos) {
-                    isSequentiallyMatchedWithMesh = true;
-                    formatExplicitlySet = true;
-
-                    // 读取数据值
-                    double val;
-                    while (file >> val) {
-                        data.push_back(val);
-                        index.push_back(data.size()); // 自动生成索引
-                    }
-                } else if (line.find("isSequentiallyMatchedWithMesh == false") != std::string::npos) {
-                    isSequentiallyMatchedWithMesh = false;
-                    formatExplicitlySet = true;
-
-                    // 读取索引和数据值对
-                    int idx;
-                    double val;
-                    while (file >> idx >> val) {
-                        index.push_back(idx);
-                        data.push_back(val);
+                        key_found["VERSION"] = true;
                     }
                 } else {
-                    // 如果没有明确指定格式，尝试自动检测
-                    if (!formatExplicitlySet) {
-                        // 保存当前文件位置，以便稍后恢复
-                        std::streampos currentPos = file.tellg();
-
-                        // 尝试读取一行数据来判断格式
-                        std::istringstream iss(line);
-                        int idx;
-                        double val;
-
-                        // 尝试读取两个值（索引和数据）
-                        if (iss >> idx >> val) {
-                            // 成功读取两个值，说明是索引-值对格式
-                            isSequentiallyMatchedWithMesh = false;
-                            formatExplicitlySet = true;
-
-                            // 处理当前行
-                            index.push_back(idx);
-                            data.push_back(val);
-
-                            // 继续读取剩余的索引-值对
-                            while (file >> idx >> val) {
-                                index.push_back(idx);
-                                data.push_back(val);
-                            }
-                        } else {
-                            // 尝试读取单个值
-                            iss.clear(); // 清除错误标志
-                            iss.seekg(0); // 回到字符串开头
-
-                            if (iss >> val) {
-                                // 成功读取单个值，说明是纯数据格式
-                                isSequentiallyMatchedWithMesh = true;
-                                formatExplicitlySet = true;
-
-                                // 处理当前行
-                                data.push_back(val);
-                                index.push_back(data.size()); // 自动生成索引
-
-                                // 继续读取剩余的数据值
-                                while (file >> val) {
-                                    data.push_back(val);
-                                    index.push_back(data.size()); // 自动生成索引
-                                }
-                            } else {
-                                // 无法识别的格式，恢复文件位置继续解析
-                                file.seekg(currentPos);
-                            }
-                        }
-                    }
+                    // 如果不是键值对格式，可能已经进入数据部分
+                    dataLines.push_back(line);
+                    inDataSection = true;
                 }
             }
 
             file.close();
+
+            // 如果没有数据行，直接返回
+            if (dataLines.empty()) {
+                return true;
+            }
+
+            // 如果没有定义分量，创建一个默认分量
+            if (titles.empty()) {
+                titles.push_back("value");
+                units.push_back("1");
+                data.resize(1);
+            }
+
+            // 检查第一行数据来判断格式
+            size_t numComponents = titles.size();
+
+            // 分析第一行数据
+            std::string firstLine = dataLines[0];
+            // 去除前导和尾随空格
+            if (firstLine.find_first_not_of(" \t") != std::string::npos) {
+                firstLine.erase(0, firstLine.find_first_not_of(" \t"));
+            }
+            if (firstLine.find_last_not_of(" \t") != std::string::npos) {
+                firstLine.erase(firstLine.find_last_not_of(" \t") + 1);
+            }
+
+            // 分析字符串中的数字部分
+            std::vector<std::string> tokens;
+            std::string token;
+            bool inNumber = false;
+
+            // 遍历字符串，将数字部分提取出来
+            for (char c : firstLine) {
+                if (c == ' ' || c == '\t') {
+                    if (inNumber) {
+                        // 结束当前数字
+                        if (!token.empty()) {
+                            tokens.push_back(token);
+                            token.clear();
+                        }
+                        inNumber = false;
+                    }
+                } else {
+                    // 非空格字符
+                    if (!inNumber) {
+                        inNumber = true;
+                    }
+                    token += c;
+                }
+            }
+
+            // 添加最后一个数字
+            if (!token.empty()) {
+                tokens.push_back(token);
+            }
+
+            // 根据格式处理数据
+            for (const auto& dataLine : dataLines) {
+                std::string line = dataLine;
+                if (line.empty()) continue;
+
+                // 去除前导和尾随空格
+                if (line.find_first_not_of(" \t") != std::string::npos) {
+                    line.erase(0, line.find_first_not_of(" \t"));
+                }
+                if (line.find_last_not_of(" \t") != std::string::npos) {
+                    line.erase(line.find_last_not_of(" \t") + 1);
+                }
+
+                // 分析字符串中的数字部分
+                std::vector<std::string> tokens;
+                std::string token;
+                bool inNumber = false;
+
+                // 遍历字符串，将数字部分提取出来
+                for (char c : line) {
+                    if (c == ' ' || c == '\t') {
+                        if (inNumber) {
+                            // 结束当前数字
+                            if (!token.empty()) {
+                                tokens.push_back(token);
+                                token.clear();
+                            }
+                            inNumber = false;
+                        }
+                    } else {
+                        // 非空格字符
+                        if (!inNumber) {
+                            inNumber = true;
+                        }
+                        token += c;
+                    }
+                }
+
+                // 添加最后一个数字
+                if (!token.empty()) {
+                    tokens.push_back(token);
+                }
+
+                // 处理数据行 - 索引列始终是必需的
+                if (tokens.size() >= numComponents + 1) {
+                    try {
+                        int idx = std::stoi(tokens[0]);
+                        index.push_back(idx);
+
+                        // 读取每个分量的值
+                        for (size_t i = 0; i < numComponents && i + 1 < tokens.size(); ++i) {
+                            double val = std::stod(tokens[i + 1]);
+                            data[i].push_back(val);
+                        }
+                    } catch (const std::exception&) {
+                        // 解析失败，忽略这一行
+                    }
+                }
+                else
+                {
+                    // 报告异常
+                    std::cerr << "Warning: Invalid data format in line: " << line << std::endl;
+                }
+            }
+
+
+            // 如果没有读到UNITS，则设置默认单位为"1"
+            if (!key_found["UNITS"] && !titles.empty()) {
+                units.clear();
+                for (size_t i = 0; i < titles.size(); i++) {
+                    units.push_back("1");
+                }
+            }
 
             // 设置正确的数据类型
             setDataType(DataType::CALCULATION_DATA);
@@ -934,13 +1171,14 @@ namespace EMP {
         : SharedDataBase(segment_manager, DataType::CALCULATION_DATA),
         meshName(SharedMemoryAllocator<char>(segment_manager)),
         index(SharedMemoryAllocator<int>(segment_manager)),
-        data(SharedMemoryAllocator<double>(segment_manager)),
-        dimtags(SharedMemoryAllocator<SharedMemoryPair>(segment_manager))
+        data(SharedMemoryAllocator<SharedMemoryVector<double>>(segment_manager)),
+        dimtags(SharedMemoryAllocator<SharedMemoryPair>(segment_manager)),
+        titles(SharedMemoryAllocator<SharedMemoryString>(segment_manager)),
+        units(SharedMemoryAllocator<SharedMemoryString>(segment_manager))
     {
         isFieldData = true;
         t = 0.0;
         type = VertexData;
-        isSequentiallyMatchedWithMesh = true;
         setDataType(DataType::CALCULATION_DATA);
     }
 
@@ -948,11 +1186,12 @@ namespace EMP {
         : SharedDataBase(other),
         t(other.t),
         type(other.type),
-        isSequentiallyMatchedWithMesh(other.isSequentiallyMatchedWithMesh),
         meshName(other.meshName),
         index(other.index),
         data(other.data),
         dimtags(other.dimtags),
+        titles(other.titles),
+        units(other.units),
         isFieldData(other.isFieldData)
     {
         setDataType(DataType::CALCULATION_DATA);
@@ -963,11 +1202,12 @@ namespace EMP {
         SharedDataBase::operator=(other);
         t = other.t;
         type = other.type;
-        isSequentiallyMatchedWithMesh = other.isSequentiallyMatchedWithMesh;
         meshName = other.meshName;
         index = other.index;
         data = other.data;
         dimtags = other.dimtags;
+        titles = other.titles;
+        units = other.units;
         isFieldData = other.isFieldData;
         return *this;
     }
@@ -990,7 +1230,6 @@ namespace EMP {
         meshName = SharedMemoryString(local.meshName.c_str(), allocator);
         isFieldData = local.isFieldData;
         type = local.type;
-        isSequentiallyMatchedWithMesh = local.isSequentiallyMatchedWithMesh;
         t = local.t;
 
         // 复制索引数据 - 优化：先预分配空间
@@ -1000,11 +1239,40 @@ namespace EMP {
             index.push_back(idx);
         }
 
-        // 复制数值数据 - 优化：先预分配空间
+        // 复制分量标题和单位
+        titles.clear();
+        units.clear();
+        titles.reserve(local.titles.size());
+        units.reserve(local.units.size());
+        for (size_t i = 0; i < local.titles.size(); ++i) {
+            titles.push_back(SharedMemoryString(local.titles[i].c_str(), allocator));
+            if (i < local.units.size()) {
+                units.push_back(SharedMemoryString(local.units[i].c_str(), allocator));
+            } else {
+                units.push_back(SharedMemoryString("", allocator));
+            }
+        }
+
+        // 复制多分量数据 - 优化：先预分配空间
         data.clear();
         data.reserve(local.data.size());
-        for (const auto& val : local.data) {
-            data.push_back(val);
+
+        // 创建分配器用于内部向量
+        SharedMemoryAllocator<double> doubleAllocator(allocator.get_segment_manager());
+
+        // 复制每个分量的数据
+        for (const auto& componentData : local.data) {
+            // 创建新的共享内存向量
+            SharedMemoryVector<double> sharedComponentData(doubleAllocator);
+            sharedComponentData.reserve(componentData.size());
+
+            // 复制数据
+            for (const auto& val : componentData) {
+                sharedComponentData.push_back(val);
+            }
+
+            // 添加到数据列表
+            data.push_back(sharedComponentData);
         }
 
         // 复制几何位置数据 - 优化：先预分配空间
@@ -1034,7 +1302,6 @@ namespace EMP {
         local.meshName = std::string(meshName.c_str());
         local.isFieldData = isFieldData;
         local.type = type;
-        local.isSequentiallyMatchedWithMesh = isSequentiallyMatchedWithMesh;
         local.t = t;
 
         // 复制索引数据 - 优化：先预分配空间
@@ -1044,11 +1311,37 @@ namespace EMP {
             local.index.push_back(idx);
         }
 
-        // 复制数值数据 - 优化：先预分配空间
+        // 复制分量标题和单位
+        local.titles.clear();
+        local.units.clear();
+        local.titles.reserve(titles.size());
+        local.units.reserve(units.size());
+        for (size_t i = 0; i < titles.size(); ++i) {
+            local.titles.push_back(std::string(titles[i].c_str()));
+            if (i < units.size()) {
+                local.units.push_back(std::string(units[i].c_str()));
+            } else {
+                local.units.push_back("");
+            }
+        }
+
+        // 复制多分量数据 - 优化：先预分配空间
         local.data.clear();
         local.data.reserve(data.size());
-        for (const auto& val : data) {
-            local.data.push_back(val);
+
+        // 复制每个分量的数据
+        for (const auto& componentData : data) {
+            // 创建新的向量
+            std::vector<double> localComponentData;
+            localComponentData.reserve(componentData.size());
+
+            // 复制数据
+            for (const auto& val : componentData) {
+                localComponentData.push_back(val);
+            }
+
+            // 添加到数据列表
+            local.data.push_back(localComponentData);
         }
 
         // 复制几何位置数据 - 优化：先预分配空间
